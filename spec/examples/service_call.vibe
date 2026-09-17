@@ -29,18 +29,18 @@ obj ServiceCall
             starter_value: $0
         ---
         # Guard for out of service areas
-        if .location is not in SERVICE_AREA(s)
-            then .status => "Rejected"
+        if ServiceCall.location is not in SERVICE_AREA(s)
+            then ServiceCall.status => "Rejected"
         otherwise
-            then .status => "Init"
+            then ServiceCall.status => "Init"
         ---
-        when .load_size is "car"    then base_rate => $50
-        when .load_size is "truck"  then base_rate => $120
-        otherwise                    then base_rate => $50
+        when ServiceCall.load_size is "car"    then base_rate => $50
+        when ServiceCall.load_size is "truck"  then base_rate => $120
+        otherwise                               then base_rate => $50
         ---
-        .price => base_rate + any.surcharge
-        .price.rounded
-        print "Call priced at {.price} for {.responder.name}"
+        ServiceCall.price => base_rate + any.surcharge
+        ServiceCall.price.rounded
+        print "Call priced at {ServiceCall.price} for {ServiceCall.responder.name}"
     end
 
     do isOverdue
@@ -48,7 +48,7 @@ obj ServiceCall
         ---
         overdue => False
 
-        if .due_at is before DateTime.now
+        if ServiceCall.due_at is before DateTime.now
             then overdue => True
         ---
         output: overdue
@@ -70,7 +70,7 @@ obj ServiceCall
                 also print response.reason
         end
         ---
-        .location => customer.address.city
+        ServiceCall.location => customer.address.city
     end
 
 end
@@ -78,7 +78,7 @@ end
 do countRejected
     uses Dispatch .service_call(s)
     ---
-    rejected(s) => every service_call in dispatch.service_call(s) where .status is "Rejected"
+    rejected(s) => every service_call in dispatch.service_call(s) where service_call.status is "Rejected"
     ---
     output: rejected(s)
 end

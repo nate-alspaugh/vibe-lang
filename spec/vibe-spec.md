@@ -48,7 +48,7 @@ Anywhere you see `=>` or `then`, something changes.
 | variable | snake_case | `base_rate` |
 | constant | UPPER_SNAKE | `SERVICE_AREA(s)` |
 | attribute, declared | `@` + snake_case | `@location` |
-| attribute, referenced | `.` + snake_case | `.location` |
+| attribute, referenced | owner + `.` + snake_case | `ServiceCall.location` |
 | plural | `(s)` — always lowercase, always `s` | `rate(s)`, `@status(s)` |
 
 `obj` and `do` are declaration keywords. They are never repeated at the call site.
@@ -61,17 +61,26 @@ The underscore-free built-ins tell you what came with the language. If you can f
 
 ## Ownership
 
-The dot always points at an owner.
+The dot always points at an owner, and the owner is written in front of it.
 
 ```
-.location              # mine — only legal inside an object
+ServiceCall.location   # this service call's — the default, even inside ServiceCall
 Job.load_size          # a Job's
 any.wheel_count        # no owner — must be handed in
+.location              # shortcut for "mine" — only legal inside an object
 ```
 
-Inside an object the owner slot is empty. Outside one, every dot has a named owner in front of it. A bare dot outside an object is an error, not a shorthand.
+Name the owner every time, even inside the object that owns the value. A method with two owners, or one read six months later, still says whose value each line touches. Translations into vibe always name the owner.
+
+Inside an object, the owner slot may be left empty as a shortcut: `.location` means the same as `ServiceCall.location`. It is a preference, never the default. Outside an object there is no shortcut — a bare dot outside an object is an error.
+
+A capitalized owner inside a method means the specific one in use — this service call, or the customer that was handed in — never all service calls.
 
 `any` fills the owner slot to say there isn't one. Nothing floats.
+
+In a search, name the item the same way: `every job in job(s) where job.is_rush is True`.
+
+Two places keep a bare dot on purpose, because they name a field rather than point at a value: `of` and `by` on a list (`comp(s).total of .market_rent`), and the `sort by:` and `with:` settings of a database call.
 
 ---
 
@@ -171,7 +180,7 @@ Lists of objects work the same way:
 ```
 @service_call(s) are a list of ServiceCall
 
-open_call(s) => every service_call in crew_member.service_call(s) where .status is not "Complete"
+open_call(s) => every service_call in crew_member.service_call(s) where service_call.status is not "Complete"
 ```
 
 **Related things get stored, not matched.** If a call has a crew member, put it on the call. Don't keep parallel lists and pair them by position.
@@ -199,7 +208,7 @@ Which side holds the real thing is usually obvious: **the side that can't functi
 Turning ids back into objects uses what is already here — no lookup syntax:
 
 ```
-call(s) => every service_call in dispatch.service_call(s) where .id is in crew_member.service_call_id(s)
+call(s) => every service_call in dispatch.service_call(s) where service_call.id is in crew_member.service_call_id(s)
 ```
 
 That extra step is the cost, and it is the honest one. An id is a promise that something exists somewhere; making you go find it is the language refusing to pretend otherwise.
@@ -241,7 +250,7 @@ do dispatch
 end
 ```
 
-`uses <Owner>` names where things come from — the owner once, bare dots in the body. `uses` and `maybe` take no colon: they name inputs, and a colon marks a setting. Multiple owners get their own lines:
+`uses <Owner>` names where things come from — the owner once, then the fields it hands in. The body names the owner again on each use: `ServiceCall.location`. `uses` and `maybe` take no colon: they name inputs, and a colon marks a setting. Multiple owners get their own lines:
 
 ```
     uses ServiceCall .location, .responder
@@ -284,7 +293,7 @@ Every header line is a setting. **No line in a header ever does anything.**
 
 ```
 base_rate => $50
-.price => base_rate + any.surcharge
+ServiceCall.price => base_rate + any.surcharge
 service_call => new ServiceCall(customer, crew_member)
 SERVICE_AREA(s) => ["South Jordan", "Sandy", "Ogden", "Riverton"]
 RATE(s) => {"car": $50, "van": $75, "truck": $120}
@@ -319,10 +328,10 @@ current_value.rounded            # car.value untouched
 **A built-in can hide *how*, not *what*.** `is not in` hiding a loop is fine. It must not hide whether case matters, because that changes the answer:
 
 ```
-.location.trimmed
-.location.lowercased
+ServiceCall.location.trimmed
+ServiceCall.location.lowercased
 
-if .location is not in SERVICE_AREA(s)
+if ServiceCall.location is not in SERVICE_AREA(s)
 ```
 
 ---
@@ -332,8 +341,8 @@ if .location is not in SERVICE_AREA(s)
 **Expressions** use symbols, two values maximum:
 
 ```
-.price => base_rate + any.surcharge
-total => .price - .discount
+ServiceCall.price => base_rate + any.surcharge
+total => ServiceCall.price - ServiceCall.discount
 ```
 
 Anything longer breaks into lines. No parentheses, no precedence:
@@ -363,25 +372,25 @@ price.rounded
 **`then` takes an action, not a condition.** An action is an assignment, a `print`, a method call, or `stop`/`skip`. If what follows is another `if` or `when`, drop the `then`.
 
 ```
-when .load_size is "car"    then base_rate => $50
-when .load_size is "van"    then base_rate => $75
-when .load_size is "truck"  then base_rate => $120
-otherwise                    then base_rate => $50
+when ServiceCall.load_size is "car"    then base_rate => $50
+when ServiceCall.load_size is "van"    then base_rate => $75
+when ServiceCall.load_size is "truck"  then base_rate => $120
+otherwise                               then base_rate => $50
 ```
 
 ```
-if .location is not in SERVICE_AREA(s)
-    then .response => False
-    also .status => "Rejected"
+if ServiceCall.location is not in SERVICE_AREA(s)
+    then ServiceCall.response => False
+    also ServiceCall.status => "Rejected"
 otherwise
-    then .response => True
-    also .status => "Init"
+    then ServiceCall.response => True
+    also ServiceCall.status => "Init"
 ```
 
 ```
-if .distance is less than 10
+if Job.distance is less than 10
     then base_rate => $50
-otherwise if .distance is less than 50
+otherwise if Job.distance is less than 50
     then base_rate => $75
 otherwise
     then base_rate => $120
@@ -398,7 +407,7 @@ A guard is a veto. It can turn an answer off, never back on:
 ```
 can_update => True
 
-if any.rent_update is less than .current_rent_price
+if any.rent_update is less than PropertyLease.current_rent_price
     then can_update => False
     also print "Too low, can't go below current rent price"
 
@@ -413,7 +422,7 @@ Putting an `otherwise` on either one breaks it:
 
 ```
 # WRONG
-if any.rent_update is less than .current_rent_price
+if any.rent_update is less than PropertyLease.current_rent_price
     then can_update => False
 otherwise
     then can_update => True          # ← wipes out a False set by the guard below
@@ -433,19 +442,19 @@ Each guard only knows its own half of the story. When two share an answer, the l
 `otherwise` stays right where the `if` really is the whole decision:
 
 ```
-if .location is not in SERVICE_AREA(s)
-    then .status => "Rejected"
+if ServiceCall.location is not in SERVICE_AREA(s)
+    then ServiceCall.status => "Rejected"
 otherwise
-    then .status => "Init"
+    then ServiceCall.status => "Init"
 ```
 
 Nested conditions go bare — no `then` before an `if`:
 
 ```
-if .status is "Init"
-    if .due_at is before DateTime.now
-        then .status => "Late"
-        also print "Overdue: {.location}"
+if ServiceCall.status is "Init"
+    if ServiceCall.due_at is before DateTime.now
+        then ServiceCall.status => "Late"
+        also print "Overdue: {ServiceCall.location}"
 ```
 
 ---
@@ -466,9 +475,9 @@ is in the same month as
 **Text**
 
 ```
-.address contains "Main"
-.address starts with "123"
-.address ends with "Apt 4"
+PropertyLease.address contains "Main"
+PropertyLease.address starts with "123"
+PropertyLease.address ends with "Apt 4"
 ```
 
 There is no `matches`. It reads general and is vague about the thing that matters — for a date, "matches" could mean the same day, month or year, and the line would not say which. Ranges say it.
@@ -480,20 +489,20 @@ There is no `matches`. It reads general and is vague about the thing that matter
 One connector per condition, never mixed — nest instead.
 
 ```
-if .is_rush is True and .distance is greater than 20
+if Job.is_rush is True and Job.distance is greater than 20
 ```
 
 Same field, several values:
 
 ```
-if .status is "Rejected" or "Complete"
+if ServiceCall.status is "Rejected" or "Complete"
 ```
 
 Name the list when the group means something:
 
 ```
 CLOSED_STATUS(s) => ["Rejected", "Complete"]
-if .status is in CLOSED_STATUS(s)
+if ServiceCall.status is in CLOSED_STATUS(s)
 ```
 
 ---
@@ -513,8 +522,8 @@ for each rate in rate(s)
 do 3 times
     print "ping"
 
-keep going until .status is "Complete"
-    .checkStatus()
+keep going until ServiceCall.status is "Complete"
+    ServiceCall.checkStatus()
 ```
 
 `skip` jumps to the next item. `stop` leaves the loop.
@@ -522,9 +531,9 @@ keep going until .status is "Complete"
 **Finding**
 
 ```
-first job in job(s) where .distance is greater than 50
-any rate in rate(s) where .key is "van"
-every job in job(s) where .is_rush is True
+first job in job(s) where job.distance is greater than 50
+any rate in rate(s) where rate.key is "van"
+every job in job(s) where job.is_rush is True
 ```
 
 `first` and `any` give back one thing. `every` gives back a list, so name it plural.
@@ -532,7 +541,7 @@ every job in job(s) where .is_rush is True
 **Changing a list**
 
 ```
-add comp to .comp(s)
+add comp to RenewalCase.comp(s)
 ```
 
 **Reporting**
@@ -547,7 +556,7 @@ list.rest
 Filter first, then report:
 
 ```
-rejected(s) => every service_call in dispatch.service_call(s) where .status is "Rejected"
+rejected(s) => every service_call in dispatch.service_call(s) where service_call.status is "Rejected"
 rejected(s).count
 ```
 
@@ -599,8 +608,8 @@ A `DateTime` knows both halves, so arithmetic rolls the date when it needs to:
 Reading the halves back:
 
 ```
-.due_at.date        # 2027-06-16
-.due_at.time        # 01:00
+ServiceCall.due_at.date  # 2027-06-16
+ServiceCall.due_at.time  # 01:00
 ```
 
 Use `Date` alone for a day with no meaningful hour, and `Time` alone for a clock value that isn't anchored to a day. Anything that happened, or will happen, at a moment is a `DateTime`. Two separate attributes for one moment is the mistake this type exists to prevent — nothing on the page says they move together, and at 23:00 they stop agreeing.
@@ -619,10 +628,10 @@ A time literal is only as precise as what you wrote. `20:00` matches the whole m
 **Comparing**
 
 ```
-if .due_at is before DateTime.now          # instant vs instant
-if .opens_at is after 20:00                # clock vs clock
-if .invoice_date is Date.today             # day vs day
-if .end_date is in the same month as target
+if ServiceCall.due_at is before DateTime.now  # instant vs instant
+if Shop.opens_at is after 20:00               # clock vs clock
+if Invoice.invoice_date is Date.today         # day vs day
+if PropertyLease.end_date is in the same month as target
 ```
 
 Date ranges use `is before` / `is after`, never part matching.
@@ -849,9 +858,9 @@ obj ServiceCallPage
         uses ServiceCallPage .status
         maybe any.message
         ---
-        when any.message is "Dispatch"  then .status => "Init"
-        when any.message is "Cancel"    then .status => "Rejected"
-        when any.message is "Refresh"   then .loadCalls()
+        when any.message is "Dispatch"  then ServiceCallPage.status => "Init"
+        when any.message is "Cancel"    then ServiceCallPage.status => "Rejected"
+        when any.message is "Refresh"   then ServiceCallPage.loadCalls()
         otherwise                        then print "Unknown message"
     end
 ```
@@ -865,7 +874,7 @@ obj ServiceCallPage
         column
             heading "Service Calls"
 
-            for each service_call in .service_call(s)
+            for each service_call in ServiceCallPage.service_call(s)
                 row
                     text "{service_call.location}"
                     text "{service_call.price}"
@@ -874,7 +883,7 @@ obj ServiceCallPage
                         then button "Dispatch"
                             sends: "Dispatch"
 
-            if .service_call(s).count is 0
+            if ServiceCallPage.service_call(s).count is 0
                 then text "Nothing scheduled"
     end
 
@@ -904,7 +913,7 @@ obj ServiceCallApi
         serves: GET "/api/service-calls"
         uses Dispatch .service_call(s)
         ---
-        open(s) => every service_call in dispatch.service_call(s) where .status is not "Complete"
+        open(s) => every service_call in dispatch.service_call(s) where service_call.status is not "Complete"
         ---
         output: open(s)
     end
@@ -935,13 +944,13 @@ do dispatch
     uses ServiceCall .location, .status, .price
     ---
     # Guard for out of service areas
-    if .location is not in SERVICE_AREA(s)
-        then .status => "Rejected"
+    if ServiceCall.location is not in SERVICE_AREA(s)
+        then ServiceCall.status => "Rejected"
     ---
-    when .load_size is "car"    then base_rate => $50
-    otherwise                    then base_rate => $50
+    when ServiceCall.load_size is "car"    then base_rate => $50
+    otherwise                               then base_rate => $50
     ---
-    .price => base_rate
+    ServiceCall.price => base_rate
 end
 ```
 
@@ -982,20 +991,20 @@ obj ServiceCall
             starter_value: $0
         ---
         # Guard for out of service areas
-        if .location is not in SERVICE_AREA(s)
-            then .response => False
-            also .status => "Rejected"
+        if ServiceCall.location is not in SERVICE_AREA(s)
+            then ServiceCall.response => False
+            also ServiceCall.status => "Rejected"
         otherwise
-            then .response => True
-            also .status => "Init"
+            then ServiceCall.response => True
+            also ServiceCall.status => "Init"
         ---
-        when .load_size is "car"    then base_rate => $50
-        when .load_size is "van"    then base_rate => $75
-        when .load_size is "truck"  then base_rate => $120
-        otherwise                    then base_rate => $50
+        when ServiceCall.load_size is "car"    then base_rate => $50
+        when ServiceCall.load_size is "van"    then base_rate => $75
+        when ServiceCall.load_size is "truck"  then base_rate => $120
+        otherwise                               then base_rate => $50
         ---
-        .price => base_rate + any.surcharge
-        .price.rounded
+        ServiceCall.price => base_rate + any.surcharge
+        ServiceCall.price.rounded
     end
 
 end

@@ -16,7 +16,7 @@ obj Tenant
         uses Tenant .lease_id(s)
         uses any.lease_id
         ---
-        add any.lease_id to .lease_id(s)
+        add any.lease_id to Tenant.lease_id(s)
     end
 
 end

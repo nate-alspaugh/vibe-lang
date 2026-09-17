@@ -28,6 +28,7 @@ Default to TypeScript unless told otherwise. Preserve what vibe made explicit ra
 
 Reshape rather than mirror:
 
+- Name the owner on every value, even inside its own object: `ServiceCall.location`, not `.location`
 - An early `return` inside a guard is almost always an `otherwise`
 - A chain of `if/else if` over one field is a `when` table
 - A counting loop is usually `any`, `every`, or a filter plus `.count`

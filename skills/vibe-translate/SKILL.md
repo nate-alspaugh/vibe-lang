@@ -37,12 +37,13 @@ Reshape the logic into vibe's forms instead of mirroring the source line by line
 1. **Find the objects first.** Group data and the functions that touch it into `obj` blocks. A loose function taking three or more arguments is a missing object — house it rather than reaching for `any`.
 2. **Write every constructor completely.** Every attribute in `attr_can_be_used` / `attr_can_be_read` gets a line in `starting_attributes`: a value (`@status => "Open"`), a declaration (`@status(s) are [...]`, `@case(s) are []`), or an empty slot filled from outside (`@id` or `@id Number`).
 3. **Headers:** `uses Owner .field, .field` and `uses any.value` — no colon on `uses` or `maybe`. Settings keep theirs: `starter_value:`, `output:`, `filter(s):`.
-4. **Branches:** an `if/else if` chain over one field is a `when` table. Independent checks that can each say no are guards — stacked `if`s with **no** `otherwise`, and the answer set to its default on its own line above them.
-5. **Math:** two values per expression at most; longer math breaks into lines. Copy a value before mutating it.
-6. **Loops and searches:** counting loops usually become `every … where` plus `.count`, or `first` / `any`.
-7. **Network and database:** `fetch` becomes an `http` block; queries become `db.find` / `db.save` / `db.delete`. Keep `if failed` (never reached) and `if refused` (server said no) as two branches. Filter rows are settings: `status: "Active"`, `end_date: start...finish` — never `is` inside a filter.
-8. **Relationships:** only one side holds the real object; the other holds ids.
-9. **Null and undefined** checks both become `is missing`.
+4. **Name the owner on every value, even inside its own object.** Write `ServiceCall.location`, never the `.location` shortcut. In searches name the item: `every job in job(s) where job.is_rush is True`. Bare dots stay only where they name a field — after `of` / `by` on a list, and in `sort by:` / `with:`.
+5. **Branches:** an `if/else if` chain over one field is a `when` table. Independent checks that can each say no are guards — stacked `if`s with **no** `otherwise`, and the answer set to its default on its own line above them.
+6. **Math:** two values per expression at most; longer math breaks into lines. Copy a value before mutating it.
+7. **Loops and searches:** counting loops usually become `every … where` plus `.count`, or `first` / `any`.
+8. **Network and database:** `fetch` becomes an `http` block; queries become `db.find` / `db.save` / `db.delete`. Keep `if failed` (never reached) and `if refused` (server said no) as two branches. Filter rows are settings: `status: "Active"`, `end_date: start...finish` — never `is` inside a filter.
+9. **Relationships:** only one side holds the real object; the other holds ids.
+10. **Null and undefined** checks both become `is missing`.
 
 ## 4 · vibe → code
 
@@ -53,6 +54,7 @@ Keep what vibe made explicit instead of collapsing it:
 | `attr_can_be_read` | `readonly` field or getter |
 | `attr_can_be_used` | writable field |
 | `@id` / `@id Number` with no value | optional field, assigned on first save |
+| `ServiceCall.location` inside `obj ServiceCall` | `this.location` (the instance, not a static) |
 | `maybe any.x` + `starter_value:` | default parameter |
 | `output:` | return value; no `output:` means it returns nothing and changes state |
 | `if failed` / `if refused` | separate network-error and non-OK-response branches |
@@ -77,6 +79,7 @@ Check the "Known open questions" list at the bottom of the spec first — many g
 - [ ] Every keyword and form used appears in the spec (search the spec for anything you're unsure of).
 - [ ] Every declared attribute has a line in its constructor.
 - [ ] No colon after `uses` / `maybe`; no `is` inside `filter(s):`.
+- [ ] Every value names its owner (`ServiceCall.location`, `job.distance`); no `.field` shortcut outside `of`, `by`, `sort by:`, `with:`.
 - [ ] No `otherwise` on a guard.
 - [ ] Gaps are marked with `# GAP:` and listed in the reply.
 

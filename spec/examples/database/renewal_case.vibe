@@ -27,7 +27,7 @@ obj RenewalCase
         ---
         db.find(Tenant)
             filter(s):
-                id: .tenant_id
+                id: RenewalCase.tenant_id
             response_reference: match(s)
             ---
             if failed
@@ -40,11 +40,11 @@ obj RenewalCase
         tenant => match(s).first
 
         if tenant is missing
-            then print "No tenant with id {.tenant_id}"
+            then print "No tenant with id {RenewalCase.tenant_id}"
             also stop
         ---
-        .tenant_name  => tenant.name
-        .tenant_email => tenant.email
+        RenewalCase.tenant_name  => tenant.name
+        RenewalCase.tenant_email => tenant.email
     end
 
 end

@@ -23,7 +23,7 @@ obj Appointment
         ---
         during_hours => True
         ---
-        local_start => .starts_at.in(LOCAL_ZONE)
+        local_start => Appointment.starts_at.in(LOCAL_ZONE)
         start_time  => local_start.time
         ---
         if start_time is before OPENS_AT
@@ -37,7 +37,7 @@ obj Appointment
     do describeStart
         uses Appointment .starts_at
         ---
-        local_start => .starts_at.in(LOCAL_ZONE)
+        local_start => Appointment.starts_at.in(LOCAL_ZONE)
         ---
         print "Starts {local_start.date} at {local_start.time}"
         ---
@@ -50,15 +50,15 @@ obj Appointment
     do markLate
         uses Appointment .starts_at, .status
         ---
-        if .status is "Booked"
-            if .starts_at is before DateTime.now
-                then .status => "Late"
+        if Appointment.status is "Booked"
+            if Appointment.starts_at is before DateTime.now
+                then Appointment.status => "Late"
     end
 
     do moveToNextDay
         uses Appointment .starts_at
         ---
-        .starts_at => .starts_at + 1 day
+        Appointment.starts_at => Appointment.starts_at + 1 day
     end
 
 end
@@ -78,7 +78,7 @@ obj InvoiceRun
         ---
         if Date.today.day is not 1
             then stop
-        if .last_run_date is in the same month as Date.today
+        if InvoiceRun.last_run_date is in the same month as Date.today
             then stop
         ---
         this_month => Date.today
@@ -98,7 +98,7 @@ obj InvoiceRun
         ---
         print "Invoicing {due(s).count} appointments for {this_month.month}/{this_month.year}"
         ---
-        .last_run_date => Date.today
+        InvoiceRun.last_run_date => Date.today
     end
 
 end
