@@ -17,10 +17,10 @@ Read both files in full before writing any vibe or any code. Do not work from me
 
 | File | Local path (this repo) | If the local file is missing |
 |---|---|---|
-| The spec | `../spec/vibe-spec.md` next to this skill | https://raw.githubusercontent.com/nate-alspaugh/vibe-lang/main/spec/vibe-spec.md |
-| Agent rules | `../spec/AGENTS.md` | https://raw.githubusercontent.com/nate-alspaugh/vibe-lang/main/spec/AGENTS.md |
+| The spec | `../../spec/vibe-spec.md` from this skill's folder | https://raw.githubusercontent.com/nate-alspaugh/vibe-lang/main/spec/vibe-spec.md |
+| Agent rules | `../../spec/AGENTS.md` | https://raw.githubusercontent.com/nate-alspaugh/vibe-lang/main/spec/AGENTS.md |
 
-Worked examples live in `../spec/examples/`. Read the one closest to the task (database calls, dates and times, objects and methods) and copy its shapes.
+Worked examples live in `../../spec/examples/`. Read the one closest to the task (database calls, dates and times, objects and methods) and copy its shapes.
 
 If the spec and this skill ever disagree, the spec wins. Say so in the reply.
 
