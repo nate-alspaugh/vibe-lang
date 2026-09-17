@@ -1,0 +1,26 @@
+{
+  "name": "vibe-lang",
+  "displayName": "vibe",
+  "description": "Syntax highlighting for vibe — a language optimized for reading.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "vibe",
+        "aliases": ["vibe", "Vibe"],
+        "extensions": [".vibe"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vibe",
+        "scopeName": "source.vibe",
+        "path": "./syntaxes/vibe.tmLanguage.json"
+      }
+    ]
+  }
+}

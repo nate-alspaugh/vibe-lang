@@ -1,0 +1,112 @@
+OPENS_AT   => 08:00
+CLOSES_AT  => 8pm
+LOCAL_ZONE => "America/Denver"
+
+obj Appointment
+
+    attr_can_be_used: @starts_at, @status
+    attr_can_be_read: @id, @booked_at, @invoice_due_date
+
+    starting_attributes:
+        uses any.day, any.clock_time
+        ---
+        @id Number
+        @booked_at        => DateTime.now
+        @starts_at        => DateTime.at(any.day, any.clock_time)
+        @invoice_due_date => Date.today + 30 days
+        @status(s) are ["Booked", "Late", "Done"]
+        @status           => "Booked"
+    end
+
+    do isDuringBusinessHours
+        uses Appointment .starts_at
+        ---
+        during_hours => True
+        ---
+        local_start => .starts_at.in(LOCAL_ZONE)
+        start_time  => local_start.time
+        ---
+        if start_time is before OPENS_AT
+            then during_hours => False
+        if start_time is after CLOSES_AT
+            then during_hours => False
+        ---
+        output: during_hours
+    end
+
+    do describeStart
+        uses Appointment .starts_at
+        ---
+        local_start => .starts_at.in(LOCAL_ZONE)
+        ---
+        print "Starts {local_start.date} at {local_start.time}"
+        ---
+        if local_start.hour is less than 12
+            then print "Morning appointment"
+        if local_start.date is Date.today
+            then print "That's today"
+    end
+
+    do markLate
+        uses Appointment .starts_at, .status
+        ---
+        if .status is "Booked"
+            if .starts_at is before DateTime.now
+                then .status => "Late"
+    end
+
+    do moveToNextDay
+        uses Appointment .starts_at
+        ---
+        .starts_at => .starts_at + 1 day
+    end
+
+end
+
+obj InvoiceRun
+
+    attr_can_be_used: @last_run_date
+    attr_can_be_read: @id
+
+    starting_attributes:
+        @id Number
+        @last_run_date => Date.today - 1 month
+    end
+
+    do sendMonthlyInvoices
+        uses InvoiceRun .last_run_date
+        ---
+        if Date.today.day is not 1
+            then stop
+        if .last_run_date is in the same month as Date.today
+            then stop
+        ---
+        this_month => Date.today
+        ---
+        db.find(Appointment)
+            filter(s):
+                invoice_due_date: this_month.first_day...this_month.last_day
+                status: "Done"
+            response_reference: due(s)
+            ---
+            if failed
+                then print request.reason
+            if refused
+                then print response.code
+                also print response.reason
+        end
+        ---
+        print "Invoicing {due(s).count} appointments for {this_month.month}/{this_month.year}"
+        ---
+        .last_run_date => Date.today
+    end
+
+end
+
+do printServerClock
+    utc_now   => Time.now
+    earlier   => Time.now - 2 hours
+    local_now => DateTime.now.in(LOCAL_ZONE)
+    ---
+    print "UTC clock {utc_now}, two hours earlier {earlier}, local {local_now}"
+end

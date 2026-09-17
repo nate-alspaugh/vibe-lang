@@ -1,0 +1,22 @@
+includes Unit from "unit.vibe"
+includes Tenant from "tenant.vibe"
+
+obj PropertyLease
+
+    attr_can_be_used: @status, @monthly_rent
+    attr_can_be_read: @id, @address, @end_date, @tenant
+
+    starting_attributes:
+        uses Unit .address, .monthly_rent
+        uses Tenant .id
+        ---
+        @id Number
+        @address      => Unit.address
+        @monthly_rent => Unit.monthly_rent
+        @tenant       => Tenant
+        @end_date     => Date.today + 12 months
+        @status(s) are ["Active", "Expired"]
+        @status       => "Active"
+    end
+
+end

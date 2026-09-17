@@ -1,0 +1,79 @@
+includes PropertyLease from "property_lease.vibe"
+includes Tenant from "tenant.vibe"
+
+obj RenewalCase
+
+    attr_can_be_used: @status, @proposed_rent, @tenant_name, @tenant_email
+    attr_can_be_read: @id, @lease_id, @tenant_id, @address, @current_rent, @end_date
+
+    starting_attributes:
+        uses PropertyLease .id, .address, .monthly_rent, .end_date, .tenant
+        ---
+        @id Number
+        @lease_id     => PropertyLease.id
+        @address      => PropertyLease.address
+        @current_rent => PropertyLease.monthly_rent
+        @end_date     => PropertyLease.end_date
+        @tenant_id    => PropertyLease.tenant.id
+        @tenant_name  => PropertyLease.tenant.name
+        @tenant_email => PropertyLease.tenant.email
+        @status(s) are ["Open", "Sent", "Signed", "Declined"]
+        @status        => "Open"
+        @proposed_rent => $0
+    end
+
+    do refreshTenantContact
+        uses RenewalCase .tenant_id, .tenant_name, .tenant_email
+        ---
+        db.find(Tenant)
+            filter(s):
+                id: .tenant_id
+            response_reference: match(s)
+            ---
+            if failed
+                then print request.reason
+            if refused
+                then print response.code
+                also print response.reason
+        end
+        ---
+        tenant => match(s).first
+
+        if tenant is missing
+            then print "No tenant with id {.tenant_id}"
+            also stop
+        ---
+        .tenant_name  => tenant.name
+        .tenant_email => tenant.email
+    end
+
+end
+
+do openRenewalCases
+    uses any.target_month
+    ---
+    db.find(PropertyLease)
+        filter(s):
+            end_date: any.target_month.first_day...any.target_month.last_day
+            status: "Active"
+        sort by: .end_date
+        with: .tenant
+        response_reference: expiring(s)
+        ---
+        if failed
+            then print request.reason
+        if refused
+            then print response.code
+            also print response.reason
+    end
+    ---
+    for each lease in expiring(s)
+        renewal_case => new RenewalCase(lease)
+
+        db.save(renewal_case)
+            if failed
+                then print request.reason
+        end
+    ---
+    print "Opened {expiring(s).count} renewal cases"
+end

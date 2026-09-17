@@ -1,0 +1,84 @@
+includes CrewMember from "crew_member.vibe"
+includes SERVICE_AREA(s) from "config.vibe"
+
+API_KEY is from the environment
+CUSTOMER_URL is from the environment
+
+RATE(s) => {"car": $50, "van": $75, "truck": $120}
+
+obj ServiceCall
+
+    attr_can_be_used: @response, @status, @price
+    attr_can_be_read: @location, @load_size, @responder
+
+    starting_attributes:
+        uses Customer .location, .load_size
+        uses Crew .member
+        ---
+        @location  => Customer.location
+        @responder => Crew.member
+        @response can be True or False
+        @status(s) are ["Init", "Started", "Rejected", "In Route", "Complete"]
+        @price => $0
+        @due_at => DateTime.at(2027-06-15, 20:00)
+    end
+
+    do dispatch
+        uses ServiceCall .location, .load_size, .status, .price
+        maybe any.surcharge
+            starter_value: $0
+        ---
+        # Guard for out of service areas
+        if .location is not in SERVICE_AREA(s)
+            then .status => "Rejected"
+        otherwise
+            then .status => "Init"
+        ---
+        when .load_size is "car"    then base_rate => $50
+        when .load_size is "truck"  then base_rate => $120
+        otherwise                    then base_rate => $50
+        ---
+        .price => base_rate + any.surcharge
+        .price.rounded
+        print "Call priced at {.price} for {.responder.name}"
+    end
+
+    do isOverdue
+        uses ServiceCall .due_at
+        ---
+        overdue => False
+
+        if .due_at is before DateTime.now
+            then overdue => True
+        ---
+        output: overdue
+    end
+
+    do loadCustomer
+        uses ServiceCall .location
+        maybe any.customer_id
+        ---
+        http.get(CUSTOMER_URL)
+            api_key: API_KEY
+            target_id: any.customer_id
+            response_reference: customer
+            ---
+            if failed
+                then print request.reason
+            if refused
+                then print response.code
+                also print response.reason
+        end
+        ---
+        .location => customer.address.city
+    end
+
+end
+
+do countRejected
+    uses Dispatch .service_call(s)
+    ---
+    rejected(s) => every service_call in dispatch.service_call(s) where .status is "Rejected"
+    ---
+    output: rejected(s)
+end

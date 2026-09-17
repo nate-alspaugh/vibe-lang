@@ -1,0 +1,22 @@
+obj Tenant
+
+    attr_can_be_used: @name, @email, @lease_id(s)
+    attr_can_be_read: @id
+
+    starting_attributes:
+        uses any.name, any.email
+        ---
+        @id Number
+        @name  => any.name
+        @email => any.email
+        @lease_id(s) are []
+    end
+
+    do recordLease
+        uses Tenant .lease_id(s)
+        uses any.lease_id
+        ---
+        add any.lease_id to .lease_id(s)
+    end
+
+end

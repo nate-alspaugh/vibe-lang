@@ -1,0 +1,22 @@
+obj Unit
+
+    attr_can_be_used: @monthly_rent, @lease_id(s)
+    attr_can_be_read: @id, @address
+
+    starting_attributes:
+        uses any.address, any.monthly_rent
+        ---
+        @id Number
+        @address      => any.address
+        @monthly_rent => any.monthly_rent
+        @lease_id(s) are a list of id
+    end
+
+    do recordLease
+        uses Unit .lease_id(s)
+        uses any.lease_id
+        ---
+        add any.lease_id to .lease_id(s)
+    end
+
+end

@@ -1,0 +1,332 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "vibe",
+  "scopeName": "source.vibe",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#divider"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#declaration"
+    },
+    {
+      "include": "#header-setting"
+    },
+    {
+      "include": "#control"
+    },
+    {
+      "include": "#collection"
+    },
+    {
+      "include": "#comparison"
+    },
+    {
+      "include": "#assignment"
+    },
+    {
+      "include": "#attribute"
+    },
+    {
+      "include": "#member"
+    },
+    {
+      "include": "#builtin-object"
+    },
+    {
+      "include": "#literal"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#type-name"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.vibe"
+    },
+    "divider": {
+      "match": "^\\s*---\\s*$",
+      "name": "comment.block.divider.vibe"
+    },
+    "string": {
+      "name": "string.quoted.double.vibe",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "meta.embedded.interpolation.vibe",
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.template-expression.begin.vibe"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.template-expression.end.vibe"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#member"
+            },
+            {
+              "include": "#attribute"
+            },
+            {
+              "include": "#constant"
+            },
+            {
+              "include": "#type-name"
+            }
+          ]
+        }
+      ]
+    },
+    "declaration": {
+      "patterns": [
+        {
+          "comment": "obj ServiceCall",
+          "match": "\\b(obj)\\s+([A-Z][A-Za-z0-9]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.declaration.object.vibe"
+            },
+            "2": {
+              "name": "entity.name.type.vibe"
+            }
+          }
+        },
+        {
+          "comment": "do dispatch",
+          "match": "\\b(do)\\s+([a-z][A-Za-z0-9]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.declaration.method.vibe"
+            },
+            "2": {
+              "name": "entity.name.function.vibe"
+            }
+          }
+        },
+        {
+          "comment": "includes ServiceCall from \"file.vibe\"",
+          "match": "\\b(includes)\\b|\\b(from)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.control.import.vibe"
+            },
+            "2": {
+              "name": "keyword.control.import.vibe"
+            }
+          }
+        },
+        {
+          "match": "^\\s*(end)\\s*$",
+          "captures": {
+            "1": {
+              "name": "keyword.declaration.end.vibe"
+            }
+          }
+        },
+        {
+          "match": "\\b(new)\\s+([A-Z][A-Za-z0-9]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.new.vibe"
+            },
+            "2": {
+              "name": "entity.name.type.vibe"
+            }
+          }
+        },
+        {
+          "comment": "is from the environment",
+          "match": "\\bis from the environment\\b",
+          "name": "keyword.other.environment.vibe"
+        }
+      ]
+    },
+    "header-setting": {
+      "patterns": [
+        {
+          "comment": "uses ServiceCall:",
+          "match": "\\b(uses)\\s+([A-Z][A-Za-z0-9]*)\\s*(:)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.header.vibe"
+            },
+            "2": {
+              "name": "entity.name.type.vibe"
+            },
+            "3": {
+              "name": "punctuation.separator.key-value.vibe"
+            }
+          }
+        },
+        {
+          "comment": "labelled settings: maybe:, output:, api_key:, target_id:, starter_value:, response_reference:, with:, filter(s):, runs:, attr_can_be_used:, starting_attributes:",
+          "match": "^\\s*(uses|maybe|output|starter_value|api_key|target_id|response_reference|with|sort by|limit|serves|sends|attr_can_be_used|attr_can_be_read|starting_attributes|stored as|filter\\(s\\)|end_date|status|id)\\s*(:)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.header.vibe"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.vibe"
+            }
+          }
+        }
+      ]
+    },
+    "control": {
+      "patterns": [
+        {
+          "match": "^\\s*(add)\\b|\\b(of|by)\\b(?=\\s*\\.)",
+          "name": "keyword.other.collection.vibe"
+        },
+        {
+          "match": "\\b(otherwise if|otherwise|when|if|then|also)\\b",
+          "name": "keyword.control.conditional.vibe"
+        },
+        {
+          "match": "\\b(for each|keep going until|do \\d+ times|skip|stop)\\b",
+          "name": "keyword.control.loop.vibe"
+        },
+        {
+          "match": "\\b(if failed|if refused)\\b",
+          "name": "keyword.control.exception.vibe"
+        },
+        {
+          "match": "\\b(print)\\b",
+          "name": "support.function.builtin.vibe"
+        },
+        {
+          "match": "^\\s*(column|row|text|button|heading|input|image)\\b",
+          "name": "support.function.view.vibe"
+        }
+      ]
+    },
+    "collection": {
+      "match": "\\b(first|any|every)\\b(?=\\s+[a-z_])|\\b(where)\\b|\\b(in)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.other.collection.vibe"
+        },
+        "2": {
+          "name": "keyword.other.collection.vibe"
+        },
+        "3": {
+          "name": "keyword.other.collection.vibe"
+        }
+      }
+    },
+    "comparison": {
+      "comment": "longest first so multi-word forms win over bare 'is'",
+      "match": "\\b(is between the range of|is greater or equal to|is less or equal to|is in the same month as|is not in|is greater than|is less than|is missing|is before|is after|is not|is in|is|contains|starts with|ends with)\\b",
+      "name": "keyword.operator.comparison.vibe"
+    },
+    "assignment": {
+      "patterns": [
+        {
+          "match": "=>",
+          "name": "keyword.operator.assignment.vibe"
+        },
+        {
+          "match": "\\b(and|or)\\b",
+          "name": "keyword.operator.logical.vibe"
+        },
+        {
+          "match": "\\b(can be|are a list of|are)\\b",
+          "name": "keyword.other.declaration.vibe"
+        },
+        {
+          "match": "[+\\-*/]",
+          "name": "keyword.operator.arithmetic.vibe"
+        }
+      ]
+    },
+    "attribute": {
+      "comment": "@location \u2014 a declared attribute",
+      "match": "@[a-z_][a-z0-9_]*(\\(s\\))?",
+      "name": "variable.other.property.declaration.vibe"
+    },
+    "member": {
+      "comment": ".location and .rounded \u2014 a reference through an owner",
+      "match": "\\.([a-z_][A-Za-z0-9_]*)(\\(s\\))?",
+      "captures": {
+        "1": {
+          "name": "variable.other.member.vibe"
+        },
+        "2": {
+          "name": "punctuation.definition.plural.vibe"
+        }
+      }
+    },
+    "builtin-object": {
+      "match": "\\b(http|db|Date|Time|DateTime|request|response)\\b",
+      "name": "support.class.builtin.vibe"
+    },
+    "literal": {
+      "patterns": [
+        {
+          "comment": "money",
+          "match": "\\$[0-9][0-9_,]*(\\.[0-9]+)?",
+          "name": "constant.numeric.money.vibe"
+        },
+        {
+          "comment": "date 2027-06-15",
+          "match": "\\b\\d{4}-\\d{2}-\\d{2}\\b",
+          "name": "constant.numeric.date.vibe"
+        },
+        {
+          "comment": "time 20:00 or 20:00:30",
+          "match": "\\b\\d{1,2}:\\d{2}(:\\d{2})?\\b",
+          "name": "constant.numeric.time.vibe"
+        },
+        {
+          "comment": "time 8pm / 8:00pm",
+          "match": "\\b\\d{1,2}(:\\d{2})?(am|pm)\\b",
+          "name": "constant.numeric.time.vibe"
+        },
+        {
+          "comment": "range 1...49",
+          "match": "\\b\\d+\\.\\.\\.\\d+\\b",
+          "name": "constant.numeric.range.vibe"
+        },
+        {
+          "comment": "duration with unit",
+          "match": "\\b\\d+\\s*(hours|hour|minutes|minute|seconds|second|days|day|weeks|week|months|month|years|year|mi|km)\\b",
+          "name": "constant.numeric.duration.vibe"
+        },
+        {
+          "match": "\\b(True|False)\\b",
+          "name": "constant.language.boolean.vibe"
+        },
+        {
+          "match": "\\b\\d+(\\.\\d+)?%?\\b",
+          "name": "constant.numeric.vibe"
+        }
+      ]
+    },
+    "constant": {
+      "comment": "SERVICE_AREA(s) \u2014 a constant, optionally plural",
+      "match": "\\b[A-Z][A-Z0-9_]{1,}\\b(\\(s\\))?",
+      "name": "variable.other.constant.vibe"
+    },
+    "type-name": {
+      "match": "\\b[A-Z][a-z][A-Za-z0-9]*\\b",
+      "name": "entity.name.type.vibe"
+    }
+  }
+}
